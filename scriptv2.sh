@@ -72,7 +72,7 @@ function instalar_bot {
     # Criação do arquivo h3rabot_config.sh com base nas informações fornecidas
 cat <<EOF > bot_config.sh
 server {
-    server_name bot.$DOMINIO_INPUT;
+    server_name admin.$DOMINIO_INPUT;
 
     location / {
         proxy_pass http://127.0.0.1:3001;
@@ -127,7 +127,7 @@ server {
 EOF
 
 # Copia os arquivos de configuração para o diretório do nginx
-sudo cp bot_config.sh /etc/nginx/sites-available/bot
+sudo cp adminbot_config.sh /etc/nginx/sites-available/bot
 sudo cp viewbot_config.sh /etc/nginx/sites-available/viewbot
 sudo cp minio_config.sh /etc/nginx/sites-available/minio
 
@@ -137,7 +137,7 @@ sudo ln -s /etc/nginx/sites-available/viewbot /etc/nginx/sites-enabled
 sudo ln -s /etc/nginx/sites-available/minio /etc/nginx/sites-enabled
 
 # Solicita e instala certificados SSL usando Certbot
-sudo certbot --nginx --email $EMAIL_GMAIL_INPUT --redirect --agree-tos -d h3rabot.$DOMINIO_INPUT -d bot.$DOMINIO_INPUT -d storage.$DOMINIO_INPUT
+sudo certbot --nginx --email $EMAIL_GMAIL_INPUT --redirect --agree-tos -d adminbot.$DOMINIO_INPUT -d bot.$DOMINIO_INPUT -d storage.$DOMINIO_INPUT
 
     # Criação do arquivo docker-compose.yml com base nas informações fornecidas
     cat <<EOF > docker-compose.yml
@@ -161,8 +161,8 @@ services:
       - bot-db
     environment: 
       - DATABASE_URL=postgresql://postgres:h3rabot@bot-db:5432/bot
-      - NEXTAUTH_URL=https://bot.$DOMINIO_INPUT
-      - NEXT_PUBLIC_VIEWER_URL=https://bot.$DOMINIO_INPUT
+      - NEXTAUTH_URL=https://adminbot.$DOMINIO_INPUT
+      - NEXT_PUBLIC_VIEWER_URL=https://adminbot.$DOMINIO_INPUT
       - ENCRYPTION_SECRET=875c916244442f7d89a8f376d9d33cac
       - ADMIN_EMAIL=${EMAIL_GMAIL_INPUT}
       - SMTP_HOST=smtp.gmail.com
