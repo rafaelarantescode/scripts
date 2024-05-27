@@ -1,22 +1,22 @@
-!/bin/bash
+#!/bin/bash
 
 # Função para solicitar informações ao usuário e armazená-las em variáveis
 function solicitar_informacoes {
 
     # Loop para solicitar e verificar o dominio
     while true; do
-    read -p "Digite o domínio (por exemplo, h3ra.com.br): " DOMINIO
-    # Verifica se o subdomínio tem um formato válido
-    if [[ $DOMINIO =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
-        break
-    else
-        echo "Por favor, insira um domínio válido no formato, por exemplo 'h3ra.com.br'."
-    fi
+        read -p "Digite o domínio (por exemplo, meudominio.com.br): " DOMINIO
+        # Verifica se o subdomínio tem um formato válido
+        if [[ $DOMINIO =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+            break
+        else
+            echo "Por favor, insira um domínio válido no formato, por exemplo 'meudominio.com.br'."
+        fi
     done    
 
     # Loop para solicitar e verificar o e-mail do Gmail
     while true; do
-        read -p "Digite o e-mail do Gmail para cadastro do h3rabot (sem espaços): " EMAIL_GMAIL
+        read -p "Digite o e-mail do Gmail para cadastro do BOT (sem espaços): " EMAIL_GMAIL
         # Verifica se o e-mail tem o formato correto e não contém espaços
         if [[ $EMAIL_GMAIL =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
             break
@@ -44,7 +44,7 @@ function solicitar_informacoes {
 }
 
 # Função para instalar o h3rabot de acordo com os comandos fornecidos
-function instalar_h3rabot {
+function instalar_bot {
     # Atualização e upgrade do sistema
     #sudo apt update
     sudo apt upgrade -y
@@ -69,10 +69,10 @@ function instalar_h3rabot {
     # Solicita informações ao usuário
     solicitar_informacoes
 
-    # Criação do arquivo h3rabot_config.sh com base nas informações fornecidas
-cat <<EOF > h3rabot_config.sh
+    # Criação do arquivo bot_config.sh com base nas informações fornecidas
+    cat <<EOF > bot_config.sh
 server {
-    server_name h3rabot.$DOMINIO_INPUT;
+    server_name admin.$DOMINIO_INPUT;
 
     location / {
         proxy_pass http://127.0.0.1:3001;
@@ -88,8 +88,8 @@ server {
 }
 EOF
 
-# Criação do arquivo viewbot_config.sh com base nas informações fornecidas
-cat <<EOF > viewbot_config.sh
+    # Criação do arquivo viewbot_config.sh com base nas informações fornecidas
+    cat <<EOF > viewbot_config.sh
 server {
     server_name bot.$DOMINIO_INPUT;
 
@@ -107,8 +107,8 @@ server {
 }
 EOF
 
-# Criação do arquivo minio_config.sh com base nas informações fornecidas
-cat <<EOF > minio_config.sh
+    # Criação do arquivo minio_config.sh com base nas informações fornecidas
+    cat <<EOF > minio_config.sh
 server {
     server_name storage.$DOMINIO_INPUT;
 
@@ -126,43 +126,43 @@ server {
 }
 EOF
 
-# Copia os arquivos de configuração para o diretório do nginx
-sudo cp h3rabot_config.sh /etc/nginx/sites-available/h3rabot
-sudo cp viewbot_config.sh /etc/nginx/sites-available/viewbot
-sudo cp minio_config.sh /etc/nginx/sites-available/minio
+    # Copia os arquivos de configuração para o diretório do nginx
+    sudo cp bot_config.sh /etc/nginx/sites-available/bot
+    sudo cp viewbot_config.sh /etc/nginx/sites-available/viewbot
+    sudo cp minio_config.sh /etc/nginx/sites-available/minio
 
-# Cria links simbólicos para ativar os sites no nginx
-sudo ln -s /etc/nginx/sites-available/h3rabot /etc/nginx/sites-enabled
-sudo ln -s /etc/nginx/sites-available/viewbot /etc/nginx/sites-enabled
-sudo ln -s /etc/nginx/sites-available/minio /etc/nginx/sites-enabled
+    # Cria links simbólicos para ativar os sites no nginx
+    sudo ln -s /etc/nginx/sites-available/bot /etc/nginx/sites-enabled
+    sudo ln -s /etc/nginx/sites-available/viewbot /etc/nginx/sites-enabled
+    sudo ln -s /etc/nginx/sites-available/minio /etc/nginx/sites-enabled
 
-# Solicita e instala certificados SSL usando Certbot
-sudo certbot --nginx --email $EMAIL_GMAIL_INPUT --redirect --agree-tos -d h3rabot.$DOMINIO_INPUT -d bot.$DOMINIO_INPUT -d storage.$DOMINIO_INPUT
+    # Solicita e instala certificados SSL usando Certbot
+    sudo certbot --nginx --email $EMAIL_GMAIL_INPUT --redirect --agree-tos -d adminbot.$DOMINIO_INPUT -d bot.$DOMINIO_INPUT -d storage.$DOMINIO_INPUT
 
     # Criação do arquivo docker-compose.yml com base nas informações fornecidas
     cat <<EOF > docker-compose.yml
 version: '3.3'
 services:
-  h3rabot-db:
+  bot-db:
     image: postgres:13
     restart: always
     volumes:
       - db_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=h3rabot
-      - POSTGRES_PASSWORD=h3rabot
+      - POSTGRES_DB=bot
+      - POSTGRES_PASSWORD=bot
 
-  h3rabot-builder:
+  typebot-builder:
     ports:
       - 3001:3000
-    image: baptistearno/h3rabot-builder:latest
+    image: baptistearno/typebot-builder:latest
     restart: always
     depends_on:
-      - h3rabot-db
+      - bot-db
     environment: 
-      - DATABASE_URL=postgresql://postgres:h3rabot@h3rabot-db:5432/h3rabot
-      - NEXTAUTH_URL=https://h3rabot.$DOMINIO_INPUT
-      - NEXT_PUBLIC_VIEWER_URL=https://bot.$DOMINIO_INPUT
+      - DATABASE_URL=postgresql://postgres:h3rabot@bot-db:5432/bot
+      - NEXTAUTH_URL=https://adminbot.$DOMINIO_INPUT
+      - NEXT_PUBLIC_VIEWER_URL=https://adminbot.$DOMINIO_INPUT
       - ENCRYPTION_SECRET=875c916244442f7d89a8f376d9d33cac
       - ADMIN_EMAIL=${EMAIL_GMAIL_INPUT}
       - SMTP_HOST=smtp.gmail.com
@@ -170,25 +170,26 @@ services:
       - SMTP_USERNAME=${EMAIL_GMAIL_INPUT}
       - SMTP_PASSWORD=${SENHA_APP_GMAIL_INPUT}
       - SMTP_SECURE=true
-      - NEXT_PUBLIC_SMTP_FROM='Suporte h3rabot' <${EMAIL_GMAIL_INPUT}>
+      - NEXT_PUBLIC_SMTP_FROM='Suporte Bot' <${EMAIL_GMAIL_INPUT}>
       - S3_ACCESS_KEY=minio
       - S3_SECRET_KEY=minio123
-      - S3_BUCKET=h3rabot
+      - S3_BUCKET=bot
       - S3_ENDPOINT=https://storage.$DOMINIO_INPUT
 
-  h3rabot-viewer:
+  typebot-viewer:
     ports:
       - 3002:3000
-    image: baptistearno/h3rabot-viewer:latest
+    image: baptistearno/typebot-viewer:latest
     restart: always
     environment:
-      - DATABASE_URL=postgresql://postgres:h3rabot@h3rabot-db:5432/h3rabot
+      - DATABASE_URL=postgresql://postgres:h3rabot@bot-db:5432/bot
       - NEXT_PUBLIC_VIEWER_URL=https://bot.$DOMINIO_INPUT
-      - NEXTAUTH_URL=https://h3rabot.$DOMINIO_INPUT
+      - NEXTAUTH_URL=https://bot.$DOMINIO_INPUT
+      - DEFAULT_WORKSPACE_PLAN=UNLIMITED
       - ENCRYPTION_SECRET=875c916244442f7d89a8f376d9d33cac
       - S3_ACCESS_KEY=minio
       - S3_SECRET_KEY=minio123
-      - S3_BUCKET=h3rabot
+      - S3_BUCKET=bot
       - S3_ENDPOINT=https://storage.$DOMINIO_INPUT
 
   mail:
@@ -213,8 +214,8 @@ services:
       /bin/sh -c "
       sleep 10;
       /usr/bin/mc config host add minio http://minio:9000 minio minio123;
-      /usr/bin/mc mb minio/h3rabot;
-      /usr/bin/mc anonymous set public minio/h3rabot/public;
+      /usr/bin/mc mb minio/bot;
+      /usr/bin/mc anonymous set public minio/bot/public;
       exit 0;
       "
 volumes:
@@ -226,8 +227,9 @@ EOF
     docker compose up -d
     cd ..
 
-    echo "h3rabot instalado e configurado com sucesso!"
+    echo "Bot instalado e configurado com sucesso!"
 }
 
 # Chamada das funções
-instalar_h3rabot
+instalar_bot
+
